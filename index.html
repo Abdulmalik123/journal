@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abe's Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --sidebar: #161616;
+  --card: #1c1c1c;
+  --border: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --text: #e8e6e0;
+  --muted: #666;
+  --muted2: #444;
+  --accent: #7c6af7;
+  --accent-dim: #3d3466;
+  --green: #4ade80;
+  --green-dim: #1a3a26;
+  --tag-daily: #4f46e5;
+  --tag-daily-bg: #1e1b4b;
+  --danger: #f87171;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; font-size: 13px; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px; min-width: 260px; background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+.sidebar-header {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-header span { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
+.sidebar-icon { font-size: 18px; }
+.sidebar-section {
+  padding: 10px 8px 6px;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
+  color: var(--muted); text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-section button {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 16px; padding: 0 4px; line-height: 1;
+  border-radius: 4px; transition: background 0.15s, color 0.15s;
+}
+.sidebar-section button:hover { background: var(--border); color: var(--text); }
+.entries-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
+.entries-list::-webkit-scrollbar { width: 4px; }
+.entries-list::-webkit-scrollbar-track { background: transparent; }
+.entries-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.entry-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  transition: background 0.12s; color: var(--muted);
+  font-size: 12px; user-select: none;
+}
+.entry-item:hover { background: var(--border); color: var(--text); }
+.entry-item.active { background: var(--accent-dim); color: var(--text); }
+.entry-item .ei-icon { font-size: 13px; flex-shrink: 0; }
+.entry-item .ei-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-item .ei-del {
+  opacity: 0; background: none; border: none; color: var(--danger);
+  cursor: pointer; font-size: 14px; padding: 0 2px; border-radius: 3px;
+  transition: opacity 0.15s;
+}
+.entry-item:hover .ei-del { opacity: 1; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.toolbar {
+  padding: 14px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg);
+}
+.toolbar .t-icon { font-size: 22px; }
+.toolbar input.t-title {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  background: none; border: none; color: var(--text);
+  outline: none; flex: 1; letter-spacing: -0.03em;
+}
+.toolbar input.t-title::placeholder { color: var(--muted2); }
+.btn-new {
+  padding: 7px 14px; background: var(--accent); color: #fff;
+  border: none; border-radius: 6px; cursor: pointer;
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+  transition: opacity 0.15s; white-space: nowrap;
+}
+.btn-new:hover { opacity: 0.85; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px 28px 60px; }
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* META */
+.meta { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+.meta-row { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+.meta-label { width: 70px; display: flex; align-items: center; gap: 6px; }
+.meta-label svg { width: 13px; height: 13px; flex-shrink: 0; }
+.tag { background: var(--tag-daily-bg); color: #818cf8; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.meta-date { color: var(--muted); }
+
+/* SECTIONS */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+  margin-bottom: 14px; letter-spacing: -0.02em;
+}
+
+/* CHECKLIST */
+.checklist { display: flex; flex-direction: column; gap: 4px; }
+.check-group { display: flex; flex-direction: column; gap: 2px; }
+.check-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 6px; border-radius: 5px;
+  transition: background 0.12s; cursor: pointer;
+}
+.check-item:hover { background: var(--card); }
+.check-item input[type=checkbox] {
+  width: 15px; height: 15px; flex-shrink: 0; cursor: pointer;
+  accent-color: var(--accent); border-radius: 3px;
+}
+.check-item label {
+  cursor: pointer; color: var(--text); font-size: 13px; flex: 1;
+  transition: color 0.15s;
+}
+.check-item.checked label { text-decoration: line-through; color: var(--muted); }
+.check-item .ci-del {
+  opacity: 0; background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 14px; padding: 0 3px;
+  transition: opacity 0.12s, color 0.12s; border-radius: 3px;
+}
+.check-item:hover .ci-del { opacity: 1; }
+.ci-del:hover { color: var(--danger) !important; }
+.check-sub { padding-left: 24px; }
+.add-check-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px; border-radius: 5px;
+  transition: background 0.12s;
+}
+.add-check-row:hover { background: var(--card); }
+.add-check-row input[type=text] {
+  background: none; border: none; outline: none;
+  color: var(--muted); font-family: 'DM Mono', monospace; font-size: 13px;
+  flex: 1; cursor: text;
+}
+.add-check-row input[type=text]::placeholder { color: var(--muted2); }
+.add-check-row input[type=text]:focus { color: var(--text); }
+.add-icon { color: var(--muted2); font-size: 16px; line-height: 1; }
+
+/* COLLAPSE GROUP */
+.group-header {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 6px; border-radius: 5px; cursor: pointer;
+  transition: background 0.12s; user-select: none;
+}
+.group-header:hover { background: var(--card); }
+.group-toggle { font-size: 10px; color: var(--muted); width: 12px; text-align: center; transition: transform 0.15s; }
+.group-toggle.open { transform: rotate(90deg); }
+.group-children { display: none; }
+.group-children.open { display: block; }
+
+/* TEXTAREA */
+.journal-textarea {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.7;
+  padding: 14px 16px; resize: none; outline: none; min-height: 100px;
+  transition: border-color 0.15s;
+}
+.journal-textarea:focus { border-color: var(--accent); }
+.journal-textarea::placeholder { color: var(--muted2); }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 6px 0 14px; }
+
+/* TODO LIST */
+.todo-list { display: flex; flex-direction: column; gap: 4px; }
+
+/* EMPTY STATE */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 12px; color: var(--muted);
+}
+.empty-state .es-icon { font-size: 48px; opacity: 0.3; }
+.empty-state p { font-size: 13px; }
+.empty-state button {
+  margin-top: 8px; padding: 9px 20px; background: var(--accent);
+  color: #fff; border: none; border-radius: 7px; cursor: pointer;
+  font-family: 'DM Mono', monospace; font-size: 13px; transition: opacity 0.15s;
+}
+.empty-state button:hover { opacity: 0.85; }
+
+/* SECTION ADD BTN */
+.section-add {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 12px; background: none; border: none;
+  cursor: pointer; padding: 4px 6px; border-radius: 5px;
+  transition: background 0.12s, color 0.12s; margin-top: 4px;
+}
+.section-add:hover { background: var(--card); color: var(--text); }
+
+/* SAVE INDICATOR */
+.save-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); opacity: 0; transition: opacity 0.3s;
+  flex-shrink: 0;
+}
+.save-dot.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-icon">📓</span>
+    <span>Journal</span>
+  </div>
+  <div class="sidebar-section">
+    <span>Daily Entries</span>
+    <button onclick="newEntry()" title="New entry">+</button>
+  </div>
+  <div class="entries-list" id="entriesList"></div>
+</div>
+
+<div class="main">
+  <div class="toolbar" id="toolbar" style="display:none">
+    <span class="t-icon" id="toolbarIcon">🏔️</span>
+    <input class="t-title" id="titleInput" placeholder="Entry title..." oninput="onTitleChange()" />
+    <div class="save-dot" id="saveDot"></div>
+    <button class="btn-new" onclick="newEntry()">+ New</button>
+  </div>
+  <div class="content" id="content">
+    <div class="empty-state">
+      <div class="es-icon">📓</div>
+      <p>No entry selected</p>
+      <button onclick="newEntry()">Create today's entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+const STORE_KEY = 'abe_journal_v2';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { entries: [], activeId: null }; }
+  catch { return { entries: [], activeId: null }; }
+}
+function save(state) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  flashSave();
+}
+
+function flashSave() {
+  const d = document.getElementById('saveDot');
+  if (!d) return;
+  d.classList.add('show');
+  clearTimeout(d._t);
+  d._t = setTimeout(() => d.classList.remove('show'), 1200);
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = load();
+let saveTimer = null;
+
+function debouncedSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => save(state), 400);
+}
+
+function getActive() {
+  return state.entries.find(e => e.id === state.activeId) || null;
+}
+
+function newEntryObj(title) {
+  const now = new Date();
+  return {
+    id: Date.now().toString(),
+    title: title || ('Abe Rogozen D' + (state.entries.length + 1)),
+    createdAt: now.toISOString(),
+    icon: '🏔️',
+    tag: 'Daily',
+    habitGroups: [
+      {
+        id: uid(), label: 'SC+P+3L', checked: false,
+        children: [
+          { id: uid(), label: 'Water?', checked: false },
+          { id: uid(), label: 'SC', checked: false },
+          { id: uid(), label: 'PND', checked: false },
+        ]
+      },
+      {
+        id: uid(), label: 'Heal', checked: false,
+        children: [
+          { id: uid(), label: 'MMF?', checked: false },
+          { id: uid(), label: 'MMW?', checked: false },
+          { id: uid(), label: '2hr?', checked: false },
+        ]
+      },
+      { id: uid(), label: 'Character.', checked: false, children: [] },
+      { id: uid(), label: 'RC/MC/C/C', checked: false, children: [] },
+      { id: uid(), label: '$$', checked: false, children: [] },
+      { id: uid(), label: '20>', checked: false, children: [] },
+      { id: uid(), label: 'No C10H14N', checked: false, children: [] },
+      { id: uid(), label: 'S+J', checked: false, children: [] },
+      { id: uid(), label: 'SCHEDULE', checked: false, children: [] },
+      { id: uid(), label: 'TODO', checked: false, children: [] },
+    ],
+    todos: [],
+    reflection: ''
+  };
+}
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+
+function newEntry() {
+  const e = newEntryObj();
+  state.entries.unshift(e);
+  state.activeId = e.id;
+  save(state);
+  renderSidebar();
+  renderEntry();
+}
+
+function selectEntry(id) {
+  state.activeId = id;
+  save(state);
+  renderSidebar();
+  renderEntry();
+}
+
+function deleteEntry(id, ev) {
+  ev.stopPropagation();
+  if (!confirm('Delete this entry?')) return;
+  state.entries = state.entries.filter(e => e.id !== id);
+  if (state.activeId === id) state.activeId = state.entries[0]?.id || null;
+  save(state);
+  renderSidebar();
+  renderEntry();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('entriesList');
+  list.innerHTML = '';
+  state.entries.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'entry-item' + (e.id === state.activeId ? ' active' : '');
+    div.innerHTML = `
+      <span class="ei-icon">${e.icon}</span>
+      <span class="ei-name">${escHtml(e.title)}</span>
+      <button class="ei-del" title="Delete">×</button>
+    `;
+    div.querySelector('.ei-del').addEventListener('click', ev => deleteEntry(e.id, ev));
+    div.addEventListener('click', () => selectEntry(e.id));
+    list.appendChild(div);
+  });
+}
+
+// ── MAIN ENTRY RENDER ─────────────────────────────────────────────────────────
+function renderEntry() {
+  const toolbar = document.getElementById('toolbar');
+  const content = document.getElementById('content');
+  const entry = getActive();
+
+  if (!entry) {
+    toolbar.style.display = 'none';
+    content.innerHTML = `<div class="empty-state">
+      <div class="es-icon">📓</div>
+      <p>No entry selected</p>
+      <button onclick="newEntry()">Create today's entry</button>
+    </div>`;
+    return;
+  }
+
+  toolbar.style.display = 'flex';
+  document.getElementById('toolbarIcon').textContent = entry.icon;
+  document.getElementById('titleInput').value = entry.title;
+
+  const created = new Date(entry.createdAt);
+  const dateStr = created.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  let html = `
+    <div class="meta">
+      <div class="meta-row">
+        <span class="meta-label"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg> Created</span>
+        <span class="meta-date">${dateStr}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="5" x2="13" y2="5"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="11" x2="10" y2="11"/></svg> Tags</span>
+        <span class="tag">${escHtml(entry.tag)}</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Begin your day Abe</div>
+      <div class="checklist" id="habitList">
+        ${renderHabitGroups(entry)}
+      </div>
+      <div class="add-check-row" style="margin-top:6px">
+        <span class="add-icon">+</span>
+        <input type="text" placeholder="Add habit..." onkeydown="addHabit(event)" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="section-title">To do</div>
+      <div class="todo-list" id="todoList">
+        ${renderTodos(entry)}
+      </div>
+      <div class="add-check-row" style="margin-top:6px">
+        <span class="add-icon">+</span>
+        <input type="text" placeholder="Add to do..." onkeydown="addTodo(event)" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="section-title">Reflection on yesterday</div>
+      <textarea class="journal-textarea" id="reflectionTA" placeholder="Write your reflection..." oninput="onReflectionChange(this)">${escHtml(entry.reflection)}</textarea>
+    </div>
+  `;
+
+  content.innerHTML = html;
+  autoResize(document.getElementById('reflectionTA'));
+}
+
+function renderHabitGroups(entry) {
+  return entry.habitGroups.map(g => {
+    if (!g.children || g.children.length === 0) {
+      return `<div class="check-item${g.checked ? ' checked' : ''}" id="hi-${g.id}">
+        <input type="checkbox" id="hc-${g.id}" ${g.checked ? 'checked' : ''} onchange="toggleHabit('${g.id}', null, this.checked)" />
+        <label for="hc-${g.id}">${escHtml(g.label)}</label>
+        <button class="ci-del" onclick="deleteHabit('${g.id}', null)">×</button>
+      </div>`;
+    }
+    const open = g._open !== false;
+    return `<div class="check-group">
+      <div class="group-header" onclick="toggleGroup('${g.id}')">
+        <span class="group-toggle${open ? ' open' : ''}">▶</span>
+        <input type="checkbox" id="hc-${g.id}" ${g.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleHabit('${g.id}', null, this.checked)" style="width:15px;height:15px;flex-shrink:0;accent-color:var(--accent);cursor:pointer;" />
+        <label for="hc-${g.id}" onclick="event.stopPropagation()" style="cursor:pointer;flex:1;${g.checked?'text-decoration:line-through;color:var(--muted)':''}">${escHtml(g.label)}</label>
+        <button class="ci-del" onclick="event.stopPropagation();deleteHabit('${g.id}', null)">×</button>
+      </div>
+      <div class="group-children check-sub${open ? ' open' : ''}" id="gc-${g.id}">
+        ${g.children.map(c => `
+          <div class="check-item${c.checked ? ' checked' : ''}" id="hi-${c.id}">
+            <input type="checkbox" id="hc-${c.id}" ${c.checked ? 'checked' : ''} onchange="toggleHabit('${g.id}', '${c.id}', this.checked)" />
+            <label for="hc-${c.id}">${escHtml(c.label)}</label>
+            <button class="ci-del" onclick="deleteHabit('${g.id}', '${c.id}')">×</button>
+          </div>
+        `).join('')}
+        <div class="add-check-row">
+          <span class="add-icon" style="font-size:12px;margin-left:2px">+</span>
+          <input type="text" placeholder="Add sub-item..." onkeydown="addSubHabit(event, '${g.id}')" />
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTodos(entry) {
+  return entry.todos.map(t => `
+    <div class="check-item${t.checked ? ' checked' : ''}" id="ti-${t.id}">
+      <input type="checkbox" id="tc-${t.id}" ${t.checked ? 'checked' : ''} onchange="toggleTodo('${t.id}', this.checked)" />
+      <label for="tc-${t.id}">${escHtml(t.label)}</label>
+      <button class="ci-del" onclick="deleteTodo('${t.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function onTitleChange() {
+  const entry = getActive(); if (!entry) return;
+  entry.title = document.getElementById('titleInput').value;
+  debouncedSave();
+  renderSidebar();
+}
+
+function toggleGroup(gid) {
+  const entry = getActive(); if (!entry) return;
+  const g = entry.habitGroups.find(x => x.id === gid); if (!g) return;
+  g._open = g._open === false ? true : false;
+  debouncedSave();
+  const toggle = document.querySelector(`#gc-${gid}`)?.previousElementSibling?.querySelector('.group-toggle');
+  const gc = document.getElementById('gc-' + gid);
+  if (toggle) toggle.classList.toggle('open', g._open !== false);
+  if (gc) gc.classList.toggle('open', g._open !== false);
+}
+
+function toggleHabit(gid, cid, val) {
+  const entry = getActive(); if (!entry) return;
+  const g = entry.habitGroups.find(x => x.id === gid); if (!g) return;
+  if (cid) {
+    const c = g.children.find(x => x.id === cid); if (!c) return;
+    c.checked = val;
+    const row = document.getElementById('hi-' + cid);
+    if (row) row.classList.toggle('checked', val);
+  } else {
+    g.checked = val;
+    const row = document.getElementById('hi-' + gid);
+    if (row) row.classList.toggle('checked', val);
+  }
+  debouncedSave();
+}
+
+function deleteHabit(gid, cid) {
+  const entry = getActive(); if (!entry) return;
+  if (cid) {
+    const g = entry.habitGroups.find(x => x.id === gid); if (!g) return;
+    g.children = g.children.filter(x => x.id !== cid);
+  } else {
+    entry.habitGroups = entry.habitGroups.filter(x => x.id !== gid);
+  }
+  debouncedSave();
+  document.getElementById('habitList').innerHTML = renderHabitGroups(entry);
+}
+
+function addHabit(ev) {
+  if (ev.key !== 'Enter') return;
+  const val = ev.target.value.trim(); if (!val) return;
+  const entry = getActive(); if (!entry) return;
+  entry.habitGroups.push({ id: uid(), label: val, checked: false, children: [] });
+  ev.target.value = '';
+  debouncedSave();
+  document.getElementById('habitList').innerHTML = renderHabitGroups(entry);
+}
+
+function addSubHabit(ev, gid) {
+  if (ev.key !== 'Enter') return;
+  const val = ev.target.value.trim(); if (!val) return;
+  const entry = getActive(); if (!entry) return;
+  const g = entry.habitGroups.find(x => x.id === gid); if (!g) return;
+  g.children.push({ id: uid(), label: val, checked: false });
+  ev.target.value = '';
+  debouncedSave();
+  document.getElementById('habitList').innerHTML = renderHabitGroups(entry);
+}
+
+function toggleTodo(tid, val) {
+  const entry = getActive(); if (!entry) return;
+  const t = entry.todos.find(x => x.id === tid); if (!t) return;
+  t.checked = val;
+  const row = document.getElementById('ti-' + tid);
+  if (row) row.classList.toggle('checked', val);
+  debouncedSave();
+}
+
+function deleteTodo(tid) {
+  const entry = getActive(); if (!entry) return;
+  entry.todos = entry.todos.filter(x => x.id !== tid);
+  debouncedSave();
+  document.getElementById('todoList').innerHTML = renderTodos(entry);
+}
+
+function addTodo(ev) {
+  if (ev.key !== 'Enter') return;
+  const val = ev.target.value.trim(); if (!val) return;
+  const entry = getActive(); if (!entry) return;
+  entry.todos.push({ id: uid(), label: val, checked: false });
+  ev.target.value = '';
+  debouncedSave();
+  document.getElementById('todoList').innerHTML = renderTodos(entry);
+}
+
+function onReflectionChange(ta) {
+  const entry = getActive(); if (!entry) return;
+  entry.reflection = ta.value;
+  autoResize(ta);
+  debouncedSave();
+}
+
+function autoResize(ta) {
+  if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = Math.max(100, ta.scrollHeight) + 'px';
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderSidebar();
+if (state.activeId && state.entries.find(e => e.id === state.activeId)) {
+  renderEntry();
+} else if (state.entries.length > 0) {
+  state.activeId = state.entries[0].id;
+  renderSidebar();
+  renderEntry();
+}
+</script>
+</body>
+</html>
